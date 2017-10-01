@@ -52,5 +52,63 @@ describe('index', function() {
                 done();
             });
     })
+
+    it('sets a session cookie', function(done){
+        // use an agent to be able to persist cookies
+        let agent = chai.request.agent(server)
+        agent
+            .get('/oauth?callback_url=test')
+            .redirects(0)
+            .end((err, res) => {
+                expect(res).to.have.cookie('connect.sid');
+                done();
+            })
+    })
+  });
+
+  describe('GET /oauth/callback', function() {
+    it('sends an error if there was no previous request to /oauth', function(done){
+        chai.request(server)
+            .get('/oauth/callback')
+            .end((err, res) => {
+                expect(res).to.have.status(400);
+                done();
+            });
+    })
+
+    // unable to test this without a real verifier from goodreads
+    it.skip('redirects to the callback url send in the /oauth call', function(done){
+        // use an agent to be able to persist cookies
+        let agent = chai.request.agent(server)
+        agent
+            .get('/oauth?callback_url=http://www.bing.com')
+            .then((res) => {
+                agent
+                    .get('/oauth/callback?oauth_token=test')
+                    .end((err, res) => {
+                        expect(res).to.redirect
+                        expect(res.redirects[0]).to.match(/^http:\/\/www\.bing\.com.+?$/);
+                        done();
+                    });
+            })
+            
+    })
+
+    // unable to test this without a real verifier from goodreads
+    it.skip('sends a JWT to the callback url', function(done){
+        // use an agent to be able to persist cookies
+        let agent = chai.request.agent(server)
+        agent
+            .get('/oauth?callback_url=http://www.bing.com')
+            .then((res) => {
+                agent
+                    .get('/oauth/callback?oauth_token=test')
+                    .end((err, res) => {
+                        expect(res.redirects[0]).to.match(/^.+?jwt=.+?$/);
+                        done();
+                    });
+            })
+    })
+
   });
 });
